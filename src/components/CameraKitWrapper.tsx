@@ -4,6 +4,7 @@ import { bootstrapCameraKit, createMediaStreamSource, Transform2D } from '@snap/
 export const CameraKitWrapper = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         let session: any;
@@ -49,6 +50,8 @@ export const CameraKitWrapper = () => {
 
                 const source = createMediaStreamSource(stream, { transform: Transform2D.MirrorX, cameraType: 'user' });
                 await session.setSource(source);
+                await session.play();
+                await source.setRenderSize(1080, 1920);
 
                 const lens = await cameraKit.lensRepository.loadLens(lensId, groupId);
                 if (!isMounted) return;
@@ -58,8 +61,8 @@ export const CameraKitWrapper = () => {
                 }).catch(() => {
                     console.error('Failed to apply lens:');
                 });
-                await session.play();
-                await source.setRenderSize(1080, 1920);
+
+                setIsLoading(false);
             } catch (err: any) {
                 console.error('Camera Kit Initialization Error:', err);
                 if (isMounted) setError(err.message || 'Failed to initialize Camera Kit');
@@ -102,6 +105,12 @@ export const CameraKitWrapper = () => {
                 id="CameraKit-AR-Canvas"
                 className="camera-canvas"
             />
+
+            {isLoading && (
+                <div className="loading-overlay">
+                    <div className="loading-spinner"></div>
+                </div>
+            )}
 
             <div className="ui-overlay">
                 {/* Top Bar */}
