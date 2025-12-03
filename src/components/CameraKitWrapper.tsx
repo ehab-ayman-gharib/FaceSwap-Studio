@@ -1,0 +1,137 @@
+import { useEffect, useRef, useState } from 'react';
+import { bootstrapCameraKit, createMediaStreamSource, Transform2D } from '@snap/camera-kit';
+
+export const CameraKitWrapper = () => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let session: any;
+        let stream: MediaStream;
+        let isMounted = true;
+
+        const initCameraKit = async () => {
+            try {
+                // TODO: Replace these with your actual credentials from the Snap Kit Portal
+                const apiToken = 'eyJhbGciOiJIUzI1NiIsImtpZCI6IkNhbnZhc1MyU0hNQUNQcm9kIiwidHlwIjoiSldUIn0.eyJhdWQiOiJjYW52YXMtY2FudmFzYXBpIiwiaXNzIjoiY2FudmFzLXMyc3Rva2VuIiwibmJmIjoxNzYwNTM5MTk4LCJzdWIiOiJiODRjZjMxZi02MzEzLTQxNGYtOTFlMS04ZGU1ODc5ZjIyMzJ-U1RBR0lOR342ZTYyMjlhYy01YTg2LTQwMmMtOGVkYi01Zjg2ZTJiMTdlNmQifQ.2gWgSc4h3ho3ptyAAdx-dhVKleSJUsQX6O8M3Hukp_M';
+                const lensId = '2fbc5bb1-42b2-476d-8ff3-5b59f875efa4';
+                const groupId = '0af95f67-5315-46db-ae62-a7e182b0cc49';
+
+                // @ts-ignore
+                if (apiToken === 'YOUR_API_TOKEN_HERE') {
+                    console.warn('Camera Kit: Please provide a valid API Token.');
+                    if (isMounted) setError('Please configure your API Token in src/components/CameraKitWrapper.tsx');
+                    return;
+                }
+
+                const cameraKit = await bootstrapCameraKit({ apiToken });
+                if (!isMounted) return;
+
+                if (!canvasRef.current) return;
+
+                session = await cameraKit.createSession({ liveRenderTarget: canvasRef.current });
+                if (!isMounted) {
+                    session.pause();
+                    return;
+                }
+
+                session.events.addEventListener('error', (event: any) => {
+                    console.error('Camera Kit Session Error:', event.detail.error);
+                    if (isMounted) setError(event.detail.error.message);
+                });
+
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                if (!isMounted) {
+                    stream.getTracks().forEach(track => track.stop());
+                    session.pause();
+                    return;
+                }
+
+                const source = createMediaStreamSource(stream, { transform: Transform2D.MirrorX, cameraType: 'user' });
+                await session.setSource(source);
+
+                const lens = await cameraKit.lensRepository.loadLens(lensId, groupId);
+                if (!isMounted) return;
+
+                await session.applyLens(lens);
+                await session.play();
+            } catch (err: any) {
+                console.error('Camera Kit Initialization Error:', err);
+                if (isMounted) setError(err.message || 'Failed to initialize Camera Kit');
+            }
+        };
+
+        initCameraKit();
+
+        return () => {
+            isMounted = false;
+            // Cleanup
+            if (session) {
+                session.pause();
+            }
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, []);
+
+    if (error) {
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                color: 'red',
+                backgroundColor: '#1a1a1a'
+            }}>
+                <h2>{error}</h2>
+            </div>
+        );
+    }
+
+    return (
+        <div className="camera-container">
+            <canvas
+                ref={canvasRef}
+                className="camera-canvas"
+            />
+
+            <div className="ui-overlay">
+                {/* Top Bar */}
+                <div className="top-bar">
+                    <button className="icon-button" aria-label="Flip Camera">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 11.5V13H9v2.5L5.5 12 9 8.5V11h6V8.5l3.5 3.5-3.5 3.5z" />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Bottom Controls */}
+                <div className="bottom-controls">
+                    <div className="hint-pill">
+                        Point at a face and tap to swap!
+                    </div>
+
+                    <div className="controls-row">
+                        <button className="icon-button" aria-label="Gallery">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z" />
+                            </svg>
+                        </button>
+
+                        <button className="shutter-button" aria-label="Take Photo">
+                            <div className="shutter-inner" />
+                        </button>
+
+                        <button className="icon-button" aria-label="Lenses">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
