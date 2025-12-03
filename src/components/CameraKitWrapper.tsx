@@ -13,7 +13,7 @@ export const CameraKitWrapper = () => {
         const initCameraKit = async () => {
             try {
                 // TODO: Replace these with your actual credentials from the Snap Kit Portal
-                const apiToken = 'eyJhbGciOiJIUzI1NiIsImtpZCI6IkNhbnZhc1MyU0hNQUNQcm9kIiwidHlwIjoiSldUIn0.eyJhdWQiOiJjYW52YXMtY2FudmFzYXBpIiwiaXNzIjoiY2FudmFzLXMyc3Rva2VuIiwibmJmIjoxNzYwNTM5MTk4LCJzdWIiOiJiODRjZjMxZi02MzEzLTQxNGYtOTFlMS04ZGU1ODc5ZjIyMzJ-U1RBR0lOR342ZTYyMjlhYy01YTg2LTQwMmMtOGVkYi01Zjg2ZTJiMTdlNmQifQ.2gWgSc4h3ho3ptyAAdx-dhVKleSJUsQX6O8M3Hukp_M';
+                const apiToken = 'eyJhbGciOiJIUzI1NiIsImtpZCI6IkNhbnZhc1MyU0hNQUNQcm9kIiwidHlwIjoiSldUIn0.eyJhdWQiOiJjYW52YXMtY2FudmFzYXBpIiwiaXNzIjoiY2FudmFzLXMyc3Rva2VuIiwibmJmIjoxNzMyNjE1MzY5LCJzdWIiOiI4NDY2ZTk1NS1mNWQxLTQ1MWUtYTFkYy0zN2YzZWJmODJlMjZ-U1RBR0lOR342OWRiMjFlOS05MzNjLTQ2M2EtOTFjZS1kZWQzMjNjNWU3MTUifQ.o0f-fIr0HpC-Mo0Gz16j83Z4D3SiCFoj7sGEs1_xF_Y';
                 const lensId = 'b67fc4bb-a57e-4b46-9fa2-917548bd0b84';
                 const groupId = 'afc89d57-20e0-4d73-9ecd-0d07065bbcc6';
 
@@ -53,7 +53,11 @@ export const CameraKitWrapper = () => {
                 const lens = await cameraKit.lensRepository.loadLens(lensId, groupId);
                 if (!isMounted) return;
 
-                await session.applyLens(lens);
+                await session.applyLens(lens).then(() => {
+                    console.log('Lens applied successfully');
+                }).catch(() => {
+                    console.error('Failed to apply lens:');
+                });
                 await session.play();
             } catch (err: any) {
                 console.error('Camera Kit Initialization Error:', err);
