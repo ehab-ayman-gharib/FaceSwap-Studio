@@ -160,17 +160,39 @@ export const CameraKitWrapper = () => {
     useEffect(() => {
         if (!isSessionReady || !cameraKitRef.current || !sessionRef.current) return;
 
+        let isMounted = true;
+
         const applyLens = async () => {
             try {
+                // Attempt to remove the current lens before loading the new one
+                // We check if the method exists to avoid runtime errors if the SDK version differs
+                if (sessionRef.current.removeLens) {
+                    console.log('Removing current lens...');
+                    await sessionRef.current.removeLens();
+                }
+
+                console.log('Loading lens:', currentLensId);
                 const lens = await cameraKitRef.current.lensRepository.loadLens(currentLensId, groupId);
+
+                if (!isMounted) return;
+
+                console.log('Applying lens:', currentLensId);
                 await sessionRef.current.applyLens(lens);
                 console.log('Lens applied successfully:', currentLensId);
             } catch (e) {
                 console.error('Failed to apply lens:', e);
+                // If it's the first lens, we might want to retry or show a specific error
+                if (isMounted) {
+                    // Optional: handle specific error states here
+                }
             }
         };
 
         applyLens();
+
+        return () => {
+            isMounted = false;
+        };
     }, [currentLensId, isSessionReady]);
 
     if (error) {
