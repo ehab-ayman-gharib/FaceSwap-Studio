@@ -5,6 +5,7 @@ import { LensesSelector } from './LensesSelector';
 export const CameraKitWrapper = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const sessionRef = useRef<any>(null);
+    const cameraKitRef = useRef<any>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -12,6 +13,8 @@ export const CameraKitWrapper = () => {
     const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
     const [isSessionReady, setIsSessionReady] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    const [currentLensId, setCurrentLensId] = useState<string>('be7a0629-909e-4305-a0cd-e28cc046193b');
+    const groupId = 'afc89d57-20e0-4d73-9ecd-0d07065bbcc6';
 
     const toggleLensesSelector = () => {
         setIsLensesSelectorOpen(!isLensesSelectorOpen);
@@ -20,7 +23,7 @@ export const CameraKitWrapper = () => {
     const handleSelectLens = (lensId: string) => {
         console.log('Selected lens:', lensId);
         setIsLensesSelectorOpen(false);
-        // TODO: Implement lens switching logic here
+        setCurrentLensId(lensId);
     };
 
     const handleFlipCamera = () => {
@@ -50,8 +53,6 @@ export const CameraKitWrapper = () => {
             try {
                 // TODO: Replace these with your actual credentials from the Snap Kit Portal
                 const apiToken = 'eyJhbGciOiJIUzI1NiIsImtpZCI6IkNhbnZhc1MyU0hNQUNQcm9kIiwidHlwIjoiSldUIn0.eyJhdWQiOiJjYW52YXMtY2FudmFzYXBpIiwiaXNzIjoiY2FudmFzLXMyc3Rva2VuIiwibmJmIjoxNzMyNjE1MzY5LCJzdWIiOiI4NDY2ZTk1NS1mNWQxLTQ1MWUtYTFkYy0zN2YzZWJmODJlMjZ-U1RBR0lOR342OWRiMjFlOS05MzNjLTQ2M2EtOTFjZS1kZWQzMjNjNWU3MTUifQ.o0f-fIr0HpC-Mo0Gz16j83Z4D3SiCFoj7sGEs1_xF_Y';
-                const lensId = 'be7a0629-909e-4305-a0cd-e28cc046193b';
-                const groupId = 'afc89d57-20e0-4d73-9ecd-0d07065bbcc6';
 
                 // @ts-ignore
                 if (apiToken === 'YOUR_API_TOKEN_HERE') {
@@ -61,6 +62,7 @@ export const CameraKitWrapper = () => {
                 }
 
                 const cameraKit = await bootstrapCameraKit({ apiToken });
+                cameraKitRef.current = cameraKit;
                 if (!isMounted) return;
 
                 if (!canvasRef.current) return;
@@ -76,15 +78,6 @@ export const CameraKitWrapper = () => {
                 session.events.addEventListener('error', (event: any) => {
                     console.error('Camera Kit Session Error:', event.detail.error);
                     if (isMounted) setError(event.detail.error.message);
-                });
-
-                const lens = await cameraKit.lensRepository.loadLens(lensId, groupId);
-                if (!isMounted) return;
-
-                await session.applyLens(lens).then(() => {
-                    console.log('Lens applied successfully');
-                }).catch(() => {
-                    console.error('Failed to apply lens:');
                 });
 
                 if (isMounted) {
@@ -163,6 +156,22 @@ export const CameraKitWrapper = () => {
             }
         };
     }, [facingMode, isSessionReady]);
+
+    useEffect(() => {
+        if (!isSessionReady || !cameraKitRef.current || !sessionRef.current) return;
+
+        const applyLens = async () => {
+            try {
+                const lens = await cameraKitRef.current.lensRepository.loadLens(currentLensId, groupId);
+                await sessionRef.current.applyLens(lens);
+                console.log('Lens applied successfully:', currentLensId);
+            } catch (e) {
+                console.error('Failed to apply lens:', e);
+            }
+        };
+
+        applyLens();
+    }, [currentLensId, isSessionReady]);
 
     if (error) {
         return (
