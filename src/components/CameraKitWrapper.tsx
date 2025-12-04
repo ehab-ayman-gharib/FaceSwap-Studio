@@ -27,7 +27,7 @@ export const CameraKitWrapper = () => {
             try {
                 // TODO: Replace these with your actual credentials from the Snap Kit Portal
                 const apiToken = 'eyJhbGciOiJIUzI1NiIsImtpZCI6IkNhbnZhc1MyU0hNQUNQcm9kIiwidHlwIjoiSldUIn0.eyJhdWQiOiJjYW52YXMtY2FudmFzYXBpIiwiaXNzIjoiY2FudmFzLXMyc3Rva2VuIiwibmJmIjoxNzMyNjE1MzY5LCJzdWIiOiI4NDY2ZTk1NS1mNWQxLTQ1MWUtYTFkYy0zN2YzZWJmODJlMjZ-U1RBR0lOR342OWRiMjFlOS05MzNjLTQ2M2EtOTFjZS1kZWQzMjNjNWU3MTUifQ.o0f-fIr0HpC-Mo0Gz16j83Z4D3SiCFoj7sGEs1_xF_Y';
-                const lensId = '4aff56af-c931-474a-bc40-2eb6bd6cb332';
+                const lensId = '510a157f-8ec8-42b5-bad5-c7a42db30cee';
                 const groupId = 'afc89d57-20e0-4d73-9ecd-0d07065bbcc6';
 
                 // @ts-ignore
