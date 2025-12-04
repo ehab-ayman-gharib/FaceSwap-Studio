@@ -11,6 +11,7 @@ export const CameraKitWrapper = () => {
     const [isLensesSelectorOpen, setIsLensesSelectorOpen] = useState(false);
     const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
     const [isSessionReady, setIsSessionReady] = useState(false);
+    const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
     const toggleLensesSelector = () => {
         setIsLensesSelectorOpen(!isLensesSelectorOpen);
@@ -26,6 +27,21 @@ export const CameraKitWrapper = () => {
         setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
     };
 
+    const handleTakePhoto = () => {
+        if (canvasRef.current) {
+            try {
+                const dataUrl = canvasRef.current.toDataURL('image/png');
+                setCapturedImage(dataUrl);
+            } catch (e) {
+                console.error("Failed to capture image", e);
+            }
+        }
+    };
+
+    const handleClosePhoto = () => {
+        setCapturedImage(null);
+    };
+
     useEffect(() => {
         let isMounted = true;
         let session: any;
@@ -34,7 +50,7 @@ export const CameraKitWrapper = () => {
             try {
                 // TODO: Replace these with your actual credentials from the Snap Kit Portal
                 const apiToken = 'eyJhbGciOiJIUzI1NiIsImtpZCI6IkNhbnZhc1MyU0hNQUNQcm9kIiwidHlwIjoiSldUIn0.eyJhdWQiOiJjYW52YXMtY2FudmFzYXBpIiwiaXNzIjoiY2FudmFzLXMyc3Rva2VuIiwibmJmIjoxNzMyNjE1MzY5LCJzdWIiOiI4NDY2ZTk1NS1mNWQxLTQ1MWUtYTFkYy0zN2YzZWJmODJlMjZ-U1RBR0lOR342OWRiMjFlOS05MzNjLTQ2M2EtOTFjZS1kZWQzMjNjNWU3MTUifQ.o0f-fIr0HpC-Mo0Gz16j83Z4D3SiCFoj7sGEs1_xF_Y';
-                const lensId = 'a4478295-2b0c-4443-a3a8-162a690b205c';
+                const lensId = 'be7a0629-909e-4305-a0cd-e28cc046193b';
                 const groupId = 'afc89d57-20e0-4d73-9ecd-0d07065bbcc6';
 
                 // @ts-ignore
@@ -171,53 +187,67 @@ export const CameraKitWrapper = () => {
                 className="camera-canvas"
             />
 
+            {capturedImage && (
+                <img src={capturedImage} alt="Captured" className="captured-image" />
+            )}
+
             {isLoading && (
                 <div className="loading-overlay">
                     <div className="loading-spinner"></div>
                 </div>
             )}
 
-            <div className="ui-overlay">
-                {/* Top Bar */}
-                <div className="top-bar">
-                    <button className="icon-button" aria-label="Flip Camera" onClick={handleFlipCamera}>
-                        <svg viewBox="0 0 24 24">
-                            <path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 11.5V13H9v2.5L5.5 12 9 8.5V11h6V8.5l3.5 3.5-3.5 3.5z" />
-                        </svg>
-                    </button>
-                </div>
-
-                {/* Bottom Controls */}
-                <div className="bottom-controls">
-                    <div className="hint-pill">
-                        Point at a face and tap to swap!
-                    </div>
-
-                    <div className="controls-row">
-                        <button className="icon-button" aria-label="Gallery">
+            {!capturedImage ? (
+                <div className="ui-overlay">
+                    {/* Top Bar */}
+                    <div className="top-bar">
+                        <button className="icon-button" aria-label="Flip Camera" onClick={handleFlipCamera}>
                             <svg viewBox="0 0 24 24">
-                                <path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z" />
-                            </svg>
-                        </button>
-
-                        <button className="shutter-button" aria-label="Take Photo">
-                            <div className="shutter-inner" />
-                        </button>
-
-                        <button className="icon-button" aria-label="Lenses" onClick={toggleLensesSelector}>
-                            <svg viewBox="0 0 24 24">
-                                <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z" />
+                                <path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 11.5V13H9v2.5L5.5 12 9 8.5V11h6V8.5l3.5 3.5-3.5 3.5z" />
                             </svg>
                         </button>
                     </div>
-                </div>
-            </div>
 
-            <LensesSelector
-                isOpen={isLensesSelectorOpen}
-                onClose={() => setIsLensesSelectorOpen(false)}
-                onSelectLens={handleSelectLens}
-            />
+                    {/* Bottom Controls */}
+                    <div className="bottom-controls">
+                        <div className="hint-pill">
+                            Point at a face and tap to swap!
+                        </div>
+
+                        <div className="controls-row">
+                            <button className="icon-button" aria-label="Gallery">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z" />
+                                </svg>
+                            </button>
+
+                            <button className="shutter-button" aria-label="Take Photo" onClick={handleTakePhoto}>
+                                <div className="shutter-inner" />
+                            </button>
+
+                            <button className="icon-button" aria-label="Lenses" onClick={toggleLensesSelector}>
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <button className="close-button-absolute" onClick={handleClosePhoto} aria-label="Close Photo">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
+                </button>
+            )}
+
+            {!capturedImage && (
+                <LensesSelector
+                    isOpen={isLensesSelectorOpen}
+                    onClose={() => setIsLensesSelectorOpen(false)}
+                    onSelectLens={handleSelectLens}
+                />
+            )}
         </div>
     );
 };
