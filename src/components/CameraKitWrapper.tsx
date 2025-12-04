@@ -4,9 +4,13 @@ import { LensesSelector } from './LensesSelector';
 
 export const CameraKitWrapper = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const sessionRef = useRef<any>(null);
+    const streamRef = useRef<MediaStream | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isLensesSelectorOpen, setIsLensesSelectorOpen] = useState(false);
+    const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+    const [isSessionReady, setIsSessionReady] = useState(false);
 
     const toggleLensesSelector = () => {
         setIsLensesSelectorOpen(!isLensesSelectorOpen);
@@ -18,10 +22,13 @@ export const CameraKitWrapper = () => {
         // TODO: Implement lens switching logic here
     };
 
+    const handleFlipCamera = () => {
+        setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+    };
+
     useEffect(() => {
-        let session: any;
-        let stream: MediaStream;
         let isMounted = true;
+        let session: any;
 
         const initCameraKit = async () => {
             try {
@@ -43,6 +50,8 @@ export const CameraKitWrapper = () => {
                 if (!canvasRef.current) return;
 
                 session = await cameraKit.createSession({ liveRenderTarget: canvasRef.current });
+                sessionRef.current = session;
+
                 if (!isMounted) {
                     session.pause();
                     return;
@@ -53,18 +62,6 @@ export const CameraKitWrapper = () => {
                     if (isMounted) setError(event.detail.error.message);
                 });
 
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                if (!isMounted) {
-                    stream.getTracks().forEach(track => track.stop());
-                    session.pause();
-                    return;
-                }
-
-                const source = createMediaStreamSource(stream, { transform: Transform2D.MirrorX, cameraType: 'user' });
-                await session.setSource(source);
-                await session.play();
-                await source.setRenderSize(1080, 1920);
-
                 const lens = await cameraKit.lensRepository.loadLens(lensId, groupId);
                 if (!isMounted) return;
 
@@ -74,7 +71,10 @@ export const CameraKitWrapper = () => {
                     console.error('Failed to apply lens:');
                 });
 
-                setIsLoading(false);
+                if (isMounted) {
+                    setIsSessionReady(true);
+                }
+
             } catch (err: any) {
                 console.error('Camera Kit Initialization Error:', err);
                 if (isMounted) setError(err.message || 'Failed to initialize Camera Kit');
@@ -86,14 +86,67 @@ export const CameraKitWrapper = () => {
         return () => {
             isMounted = false;
             // Cleanup
-            if (session) {
-                session.pause();
-            }
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+            if (sessionRef.current) {
+                sessionRef.current.pause();
             }
         };
     }, []);
+
+    useEffect(() => {
+        if (!isSessionReady || !sessionRef.current) return;
+
+        let isMounted = true;
+
+        const initStream = async () => {
+            try {
+                // Stop previous stream if it exists
+                if (streamRef.current) {
+                    streamRef.current.getTracks().forEach(track => track.stop());
+                }
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: facingMode }
+                });
+
+                if (!isMounted) {
+                    stream.getTracks().forEach(track => track.stop());
+                    return;
+                }
+
+                streamRef.current = stream;
+
+                const source = createMediaStreamSource(stream, {
+                    transform: facingMode === 'user' ? Transform2D.MirrorX : undefined,
+                    cameraType: facingMode
+                });
+
+                await sessionRef.current.setSource(source);
+                await sessionRef.current.play();
+                await source.setRenderSize(1080, 1920);
+
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            } catch (err: any) {
+                console.error('Camera Stream Error:', err);
+                if (isMounted) setError(err.message || 'Failed to start camera stream');
+            }
+        };
+
+        initStream();
+
+        return () => {
+            isMounted = false;
+            // We don't necessarily want to stop the stream on unmount of this effect 
+            // if we are just switching modes, but initStream handles stopping the old one.
+            // However, if the component unmounts, we should stop it.
+            // The issue is this cleanup runs before the next effect run.
+            // If we stop it here, there might be a brief black screen or flicker, which is expected.
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [facingMode, isSessionReady]);
 
     if (error) {
         return (
@@ -127,7 +180,7 @@ export const CameraKitWrapper = () => {
             <div className="ui-overlay">
                 {/* Top Bar */}
                 <div className="top-bar">
-                    <button className="icon-button" aria-label="Flip Camera">
+                    <button className="icon-button" aria-label="Flip Camera" onClick={handleFlipCamera}>
                         <svg viewBox="0 0 24 24">
                             <path d="M20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 11.5V13H9v2.5L5.5 12 9 8.5V11h6V8.5l3.5 3.5-3.5 3.5z" />
                         </svg>
