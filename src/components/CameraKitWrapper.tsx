@@ -1,10 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { bootstrapCameraKit, createMediaStreamSource, Transform2D } from '@snap/camera-kit';
+import { LensesSelector } from './LensesSelector';
 
 export const CameraKitWrapper = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLensesSelectorOpen, setIsLensesSelectorOpen] = useState(false);
+
+    const toggleLensesSelector = () => {
+        setIsLensesSelectorOpen(!isLensesSelectorOpen);
+    };
+
+    const handleSelectLens = (lensId: string) => {
+        console.log('Selected lens:', lensId);
+        setIsLensesSelectorOpen(false);
+        // TODO: Implement lens switching logic here
+    };
 
     useEffect(() => {
         let session: any;
@@ -139,7 +151,7 @@ export const CameraKitWrapper = () => {
                             <div className="shutter-inner" />
                         </button>
 
-                        <button className="icon-button" aria-label="Lenses">
+                        <button className="icon-button" aria-label="Lenses" onClick={toggleLensesSelector}>
                             <svg viewBox="0 0 24 24">
                                 <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z" />
                             </svg>
@@ -147,6 +159,12 @@ export const CameraKitWrapper = () => {
                     </div>
                 </div>
             </div>
+
+            <LensesSelector
+                isOpen={isLensesSelectorOpen}
+                onClose={() => setIsLensesSelectorOpen(false)}
+                onSelectLens={handleSelectLens}
+            />
         </div>
     );
 };

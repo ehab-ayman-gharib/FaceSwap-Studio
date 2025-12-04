@@ -193,3 +193,103 @@
         transform: rotate(360deg);
     }
 }
+
+/* Lenses Selector UI */
+.lenses-selector-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #0f1115;
+    /* Dark background from image */
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+.lenses-selector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background-color: #0f1115;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.lenses-selector-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px;
+    margin-left: -8px;
+    border-radius: 50%;
+}
+
+.close-button:active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.lenses-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 16px;
+    overflow-y: auto;
+    padding-bottom: 40px;
+}
+
+.lens-card {
+    position: relative;
+    aspect-ratio: 3/4;
+    border-radius: 16px;
+    overflow: hidden;
+    background-color: #1e2025;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.lens-card:active {
+    transform: scale(0.98);
+}
+
+.lens-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lens-title-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    box-sizing: border-box;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
